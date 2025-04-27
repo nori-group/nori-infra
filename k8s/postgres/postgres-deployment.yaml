@@ -25,8 +25,8 @@ spec:
               cpu: "250m"
           image: postgres:lastest
           envFrom:
-            - configMapRef:
-              name: postgres-config
+            - secretRef:
+              name: postgres-secret
           ports:
             - containerPort: 5432
              
