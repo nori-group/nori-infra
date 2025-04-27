@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: synapse
+  namespace: nori-infra
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: synapse
+  template:
+    metadata:
+      labels:
+        app: synapse
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: synapse
+          resources:
+            limits:
+              memory: "2Gi"
+              cpu: "500m"
+            requests:
+              ephemeral-storage: "1Gi"
+              memory: "256Mi"
+              cpu: "250m"
+          image: ghcr.io/element-hq/synapse:v1.128.0
+          env:
+            - name: SYNAPSE_SERVER_NAME
+              value: synapse.utcssa.xyz
+            - name: SYNAPSE_REPORT_STATS
+              value: "no"
+            - name: SYNAPSE_CONFIG_PATH
+              value: "/data/homeserver.yaml"
+          ports:
+            - containerPort: 8008
+          volumeMounts:
+            - name: synapse-config
+              mountPath: /data
+      volumes:
+        - name: synapse-config
+          configMap:
+            name: synapse-config

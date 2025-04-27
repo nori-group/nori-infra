@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: nori-infra
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: postgres
+          resources:
+            limits:
+              memory: "2Gi"
+            requests:
+              ephemeral-storage: "2Gi"
+              memory: "256Mi"
+              cpu: "250m"
+          image: postgres:lastest
+          envFrom:
+            - configMapRef:
+              name: postgres-config
+          ports:
+            - containerPort: 5432
+             
+            
