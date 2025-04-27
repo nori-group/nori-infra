@@ -23,10 +23,10 @@ spec:
               ephemeral-storage: "2Gi"
               memory: "256Mi"
               cpu: "250m"
-          image: postgres:lastest
+          image: postgres:17.4
           envFrom:
             - secretRef:
-              name: postgres-secret
+                name: postgres-secret
           ports:
             - containerPort: 5432
              

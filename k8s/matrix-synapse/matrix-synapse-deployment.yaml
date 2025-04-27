@@ -34,10 +34,3 @@ spec:
               value: "/data/homeserver.yaml"
           ports:
             - containerPort: 8008
-          volumeMounts:
-            - name: synapse-config
-              mountPath: /data
-      volumes:
-        - name: synapse-config
-          configMap:
-            name: synapse-config
