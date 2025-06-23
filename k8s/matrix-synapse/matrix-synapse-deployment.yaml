@@ -21,16 +21,72 @@ spec:
               memory: "2Gi"
               cpu: "500m"
             requests:
-              ephemeral-storage: "1Gi"
               memory: "256Mi"
               cpu: "250m"
           image: ghcr.io/element-hq/synapse:v1.128.0
           env:
             - name: SYNAPSE_SERVER_NAME
-              value: synapse.utcssa.xyz
+              valueFrom:
+                configMapKeyRef:
+                  name: matrix-domain-config
+                  key: matrix_domain
             - name: SYNAPSE_REPORT_STATS
               value: "no"
             - name: SYNAPSE_CONFIG_PATH
               value: "/data/homeserver.yaml"
           ports:
             - containerPort: 8008
+          volumeMounts:
+          - name: synapse-data
+            mountPath: /data
+      volumes:
+      - name: synapse-data
+        persistentVolumeClaim:
+          claimName: synapse-pvc 
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: synapse-config-generator
+  namespace: nori-infra
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: synapse-config-generator
+        image: ghcr.io/element-hq/synapse:v1.128.0 
+        args: ["generate"]
+        env:
+          - name: SYNAPSE_SERVER_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: matrix-domain-config
+                key: matrix_domain
+          - name: SYNAPSE_REPORT_STATS
+            value: "no"
+        volumeMounts:
+        - name: synapse-data
+          mountPath: /data
+      volumes:
+      - name: synapse-data
+        persistentVolumeClaim:
+          claimName: synapse-pvc
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: synapse-config-editor
+  namespace: nori-infra
+spec:
+  containers:
+  - name: editor-container
+    image: ubuntu
+    command: ["/bin/bash", "-c", "while true; do sleep 3600; done"]
+    volumeMounts:
+    - name: synapse-data-volume
+      mountPath: /data
+  volumes:
+  - name: synapse-data-volume
+    persistentVolumeClaim:
+      claimName: synapse-pvc

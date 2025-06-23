@@ -1,0 +1,2 @@
+k8s/matrix-synapse/matrix-synapse-domain-config.yaml
+k8s/postgres/postgres-secret.yaml

@@ -19,6 +19,7 @@ spec:
           resources:
             limits:
               memory: "2Gi"
+              cpu: "500m"
             requests:
               ephemeral-storage: "2Gi"
               memory: "256Mi"
@@ -29,5 +30,10 @@ spec:
                 name: postgres-secret
           ports:
             - containerPort: 5432
-             
-            
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc
