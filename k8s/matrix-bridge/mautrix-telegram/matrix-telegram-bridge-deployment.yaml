@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mautrix-telegram
+  namespace: nori-infra
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mautrix-telegram
+  template:
+    metadata:
+      labels:
+        app: mautrix-telegram
+    spec:
+      containers:
+        - name: mautrix-telegram
+          image: dock.mau.dev/mautrix/telegram:latest
+          volumeMounts:
+            - name: synapse-data
+              mountPath: /data
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+      volumes:
+        - name: synapse-data
+          persistentVolumeClaim:
+            claimName: synapse-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mautrix-telegram
+  namespace: nori-infra
+spec:
+  selector:
+    app: mautrix-telegram
+  ports:
+    - port: 29317
+      targetPort: 29317
