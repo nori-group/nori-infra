@@ -1,0 +1,45 @@
+version: "3.7"
+
+services:
+  synapse:
+    image: ghcr.io/element-hq/synapse:v1.132.0
+    container_name: synapse
+    restart: unless-stopped
+    environment:
+      - SYNAPSE_SERVER_NAME=${MATRIX_DOMAIN}
+      - SYNAPSE_REPORT_STATS=no
+    volumes:
+      - ./docker/data/synapse:/data
+    ports:
+      - "8008:8008"   # HTTP API
+      - "8448:8448"   # Federation port
+    networks:
+      - matrix-net
+
+  mautrix-telegram:
+    image: dock.mau.dev/mautrix/telegram:latest
+    container_name: mautrix-telegram
+    restart: unless-stopped
+    depends_on:
+      - synapse
+    volumes:
+      - ./docker/data/mautrix-telegram:/data
+    networks:
+      - matrix-net
+  nginx-wellknown:
+    image: nginx:stable
+    container_name: nginx-wellknown
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx/default.conf.template:/etc/nginx/conf.d/default.conf.template
+    environment:
+      - MAIN_DOMAIN=${MAIN_DOMAIN}
+      - MATRIX_DOMAIN=${MATRIX_DOMAIN}
+    command: /bin/sh -c "envsubst < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
+    networks:
+      - matrix-net
+networks:
+  matrix-net:
+    driver: bridge
