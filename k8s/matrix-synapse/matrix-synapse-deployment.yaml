@@ -62,7 +62,7 @@ spec:
             valueFrom:
               configMapKeyRef:
                 name: matrix-domain-config
-                key: matrix_domain
+                key: main_domain
           - name: SYNAPSE_REPORT_STATS
             value: "no"
         volumeMounts:
