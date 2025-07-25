@@ -37,3 +37,20 @@ spec:
         - name: postgres-storage
           persistentVolumeClaim:
             claimName: postgres-pvc
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-database
+  namespace: nori-infra
+spec:
+  template:
+    spec:
+      containers:
+        - name: db-init
+          image: postgres:17.4
+          command: ["sh", "-c", "PGPASSWORD=$POSTGRES_PASSWORD psql -h postgres -U $POSTGRES_USER -w -c 'CREATE DATABASE telegram_bridge;'"]
+          envFrom:
+            - secretRef:
+                name: postgres-secret
+      restartPolicy: Never
