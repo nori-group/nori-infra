@@ -14,6 +14,21 @@ spec:
         app: synapse
     spec:
       automountServiceAccountToken: false
+      initContainers:
+        - name: synapse-config-generator
+          image: ghcr.io/element-hq/synapse:v1.128.0 
+          args: ["generate"]
+          env:
+            - name: SYNAPSE_SERVER_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: matrix-domain-config
+                  key: main_domain
+            - name: SYNAPSE_REPORT_STATS
+              value: "no"
+          volumeMounts:
+          - name: synapse-data
+            mountPath: /data
       containers:
         - name: synapse
           resources:
@@ -37,41 +52,17 @@ spec:
           ports:
             - containerPort: 8008
           volumeMounts:
-          - name: synapse-data
-            mountPath: /data
-      volumes:
-      - name: synapse-data
-        persistentVolumeClaim:
-          claimName: synapse-pvc 
----
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: synapse-config-generator
-  namespace: nori-infra
-spec:
-  template:
-    spec:
-      restartPolicy: OnFailure
-      containers:
-      - name: synapse-config-generator
-        image: ghcr.io/element-hq/synapse:v1.128.0 
-        args: ["generate"]
-        env:
-          - name: SYNAPSE_SERVER_NAME
-            valueFrom:
-              configMapKeyRef:
-                name: matrix-domain-config
-                key: main_domain
-          - name: SYNAPSE_REPORT_STATS
-            value: "no"
-        volumeMounts:
-        - name: synapse-data
-          mountPath: /data
+            - name: synapse-data
+              mountPath: /data
+            - name: mautrix-telegram-data
+              mountPath: /data/mautrix-telegram
       volumes:
       - name: synapse-data
         persistentVolumeClaim:
           claimName: synapse-pvc
+      - name: mautrix-telegram-data
+        persistentVolumeClaim:
+          claimName: mautrix-telegram-pvc
 ---
 apiVersion: v1
 kind: Pod
