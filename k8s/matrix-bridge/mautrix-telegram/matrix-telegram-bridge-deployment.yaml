@@ -16,8 +16,14 @@ spec:
       containers:
         - name: mautrix-telegram
           image: dock.mau.dev/mautrix/telegram:latest
+          command:
+            - sh
+            - -c
+            - |
+              python -m mautrix_telegram -c /data/config.yaml -r /data/registration.yaml -g;
+              python -m mautrix_telegram --no-update -c /data/config.yaml
           volumeMounts:
-            - name: synapse-data
+            - name: mautrix-telegram-config
               mountPath: /data
           resources:
             limits:
@@ -26,10 +32,44 @@ spec:
             requests:
               memory: "256Mi"
               cpu: "100m"
+      initContainers:
+        - name: generate-mautrix-telegram-config
+          image: alpine:3.19
+          command:
+            - sh
+            - -c
+            - |
+              apk add --no-cache gettext
+              envsubst < /template/config.template > /data/config.yaml
+          env:
+            - name: MAIN_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: matrix-domain-config
+                  key: main_domain
+            - name: MATRIX_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: matrix-domain-config
+                  key: matrix_domain
+          envFrom:
+            - secretRef:
+                name: postgres-secret
+            - secretRef:
+                name: mautrix-telegram-secret
+          volumeMounts:
+            - name: mautrix-telegram-template
+              mountPath: /template
+            - name: mautrix-telegram-config
+              mountPath: /data
+
       volumes:
-        - name: synapse-data
+        - name: mautrix-telegram-config
           persistentVolumeClaim:
-            claimName: synapse-pvc
+            claimName: mautrix-telegram-pvc
+        - name: mautrix-telegram-template
+          configMap:
+            name: mautrix-telegram-config-template
 ---
 apiVersion: v1
 kind: Service
