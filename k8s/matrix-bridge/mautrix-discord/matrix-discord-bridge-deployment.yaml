@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mautrix-discord
+  namespace: nori-infra
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mautrix-discord
+  template:
+    metadata:
+      labels:
+        app: mautrix-discord
+    spec:
+      containers:
+        - name: mautrix-discord
+          image: dock.mau.dev/mautrix/discord:v0.7.5
+          volumeMounts:
+            - name: mautrix-discord-config
+              mountPath: /data
+          command: 
+            - sh
+            - -c
+            - |
+              ./docker-run.sh
+          # command: ["/bin/bash", "-c", "while true; do sleep 3600; done"]
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+      initContainers:
+        - name: generate-mautrix-discord-config
+          image: alpine:3.19
+          command:
+            - sh
+            - -c
+            - |
+              apk add --no-cache gettext
+              envsubst < /template/config.template > /data/config.yaml
+          env:
+            - name: MAIN_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: matrix-domain-config
+                  key: main_domain
+            - name: MATRIX_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: matrix-domain-config
+                  key: matrix_domain
+          envFrom:
+            - secretRef:
+                name: postgres-secret
+          volumeMounts:
+            - name: mautrix-discord-template
+              mountPath: /template
+            - name: mautrix-discord-config
+              mountPath: /data
+        - name: generate-mautrix-discord-registration
+          image: dock.mau.dev/mautrix/discord:latest
+          command:
+            - sh
+            - -c
+            - |
+              mautrix-discord -g -c /data/config.yaml -r /data/registration.yaml;
+              chmod 766 /data/config.yaml /data/registration.yaml;
+              chown 991:991 /data/config.yaml /data/registration.yaml
+          volumeMounts:
+            - name: mautrix-discord-config
+              mountPath: /data
+      volumes:
+        - name: mautrix-discord-config
+          persistentVolumeClaim:
+            claimName: mautrix-discord-pvc
+        - name: mautrix-discord-template
+          configMap:
+            name: mautrix-discord-config-template
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mautrix-discord
+  namespace: nori-infra
+spec:
+  selector:
+    app: mautrix-discord
+  ports:
+    - port: 29334
+      targetPort: 29334
