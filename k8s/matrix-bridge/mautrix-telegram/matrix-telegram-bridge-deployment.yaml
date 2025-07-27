@@ -15,16 +15,15 @@ spec:
     spec:
       containers:
         - name: mautrix-telegram
-          image: dock.mau.dev/mautrix/telegram:latest
+          image: dock.mau.dev/mautrix/telegram:v0.15.2
+          volumeMounts:
+            - name: mautrix-telegram-config
+              mountPath: /data
           command:
             - sh
             - -c
             - |
-              python -m mautrix_telegram -c /data/config.yaml -r /data/registration.yaml -g;
-              python -m mautrix_telegram --no-update -c /data/config.yaml
-          volumeMounts:
-            - name: mautrix-telegram-config
-              mountPath: /data
+              ./docker-run.sh
           resources:
             limits:
               memory: "512Mi"
@@ -62,7 +61,16 @@ spec:
               mountPath: /template
             - name: mautrix-telegram-config
               mountPath: /data
-
+        - name: generate-mautrix-telegram-registration
+          image: dock.mau.dev/mautrix/telegram:v0.15.2
+          command:
+            - sh
+            - -c
+            - |
+              python -m mautrix_telegram -c /data/config.yaml -r /data/registration.yaml -g;
+          volumeMounts:
+            - name: mautrix-telegram-config
+              mountPath: /data
       volumes:
         - name: mautrix-telegram-config
           persistentVolumeClaim:
