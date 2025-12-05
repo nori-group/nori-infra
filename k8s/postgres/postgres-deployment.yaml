@@ -68,6 +68,9 @@ spec:
                 IF NOT EXISTS (SELECT FROM pg_database WHERE datname = 'discord_bridge') THEN
                   CREATE DATABASE discord_bridge;
                 END IF;
+                IF NOT EXISTS (SELECT FROM pg_database WHERE datname = 'nori_contacts_server') THEN
+                  CREATE DATABASE nori_contacts_server;
+                END IF;
               END
               \$\$;
               EOF

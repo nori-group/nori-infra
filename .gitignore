@@ -1,4 +1,5 @@
 k8s/matrix-synapse/matrix-synapse-domain-config.yaml
 k8s/postgres/postgres-secret.yaml
 k8s/matrix-bridge/mautrix-telegram/matrix-telegram-bridge-secret.yaml
+k8s/nori-contacts-server/contacts-server-secret.yaml
 .env
