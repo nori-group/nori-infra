@@ -29,6 +29,18 @@ spec:
           volumeMounts:
           - name: synapse-data
             mountPath: /data
+        - name: synapse-install-shared-secret-authenticator
+          image: ghcr.io/element-hq/synapse:v1.128.0
+          command:
+            - sh
+            - -c
+            - |
+              echo "Installing shared-secret-authenticator..."
+              pip install --no-cache-dir --root-user-action=ignore shared-secret-authenticator -t /data/site-packages
+              echo "Installation done."
+          volumeMounts:
+            - name: synapse-data
+              mountPath: /data
       containers:
         - name: synapse
           resources:
@@ -49,6 +61,8 @@ spec:
               value: "no"
             - name: SYNAPSE_CONFIG_PATH
               value: "/data/homeserver.yaml"
+            - name: PYTHONPATH
+              value: "/data/site-packages:${PYTHONPATH}"
           ports:
             - containerPort: 8008
           volumeMounts:
